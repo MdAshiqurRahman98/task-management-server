@@ -26,34 +26,34 @@ const client = new MongoClient(uri, {
     }
 });
 
-// Custom middlewares
-const logger = async (req, res, next) => {
-    console.log('called: ', req.hostname, req.originalUrl);
-    console.log('log: info', req.method, req.url);
-    next();
-}
-
-const verifyToken = async (req, res, next) => {
-    const token = req?.cookies?.token;
-    // console.log('Token in the middleware: ', token);
-
-    if (!token) {
-        return res.status(401).send({ message: 'unauthorized access' });
-    }
-
-    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
-        if (err) {
-            return res.status(401).send({ message: 'unauthorized access' });
-        }
-
-        req.decoded = decoded;
-        next();
-    })
-}
-
 async function run() {
     try {
         const taskCollection = client.db("taskDB").collection("tasks");
+
+        // Custom middlewares
+        const logger = async (req, res, next) => {
+            console.log('called: ', req.hostname, req.originalUrl);
+            console.log('log: info', req.method, req.url);
+            next();
+        }
+
+        const verifyToken = async (req, res, next) => {
+            const token = req?.cookies?.token;
+            // console.log('Token in the middleware: ', token);
+
+            if (!token) {
+                return res.status(401).send({ message: 'unauthorized access' });
+            }
+
+            jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+                if (err) {
+                    return res.status(401).send({ message: 'unauthorized access' });
+                }
+
+                req.decoded = decoded;
+                next();
+            })
+        }
 
         // Auth related APIs
         try {
