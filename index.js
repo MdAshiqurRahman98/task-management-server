@@ -90,9 +90,150 @@ async function run() {
             console.log(error);
         }
 
+        // Tasks related APIs
+        try {
+            app.get('/api/v1/tasks', logger, verifyToken, async (req, res) => {
+                if (req.query.email !== req.decoded.email) {
+                    return res.status(403).send({ message: 'forbidden access' });
+                }
+
+                const email = req.query.email;
+                const query = { email: email };
+                const cursor = taskCollection.find(query);
+                const result = await cursor.sort({ timestamp: -1 }).toArray();
+                res.send(result);
+            })
+        }
+        catch (error) {
+            console.log(error);
+        }
+
+        try {
+            app.get('/api/v1/task/:id', async (req, res) => {
+                const id = req.params.id;
+                const query = { _id: new ObjectId(id) };
+                const result = await taskCollection.findOne(query);
+                res.send(result);
+            })
+        }
+        catch (error) {
+            console.log(error);
+        }
+
+        try {
+            app.post('/api/v1/add-task', logger, verifyToken, async (req, res) => {
+                console.log(req.query.email);
+                // console.log('Token', req.cookies.token);
+                console.log('User of the valid token', req.decoded);
+
+                if (req.query.email !== req.decoded.email) {
+                    return res.status(403).send({ message: 'forbidden access' });
+                }
+
+                const newTask = req.body;
+                newTask.timestamp = new Date();
+                console.log(newTask);
+                const result = await taskCollection.insertOne(newTask);
+                res.send(result);
+            })
+        }
+        catch (error) {
+            console.log(error);
+        }
+
+        try {
+            app.patch('/api/v1/update-task/:id', logger, verifyToken, async (req, res) => {
+                console.log(req.query.email);
+                // console.log('Token', req.cookies.token);
+                console.log('User of the valid token', req.decoded);
+
+                if (req.query.email !== req.decoded.email) {
+                    return res.status(403).send({ message: 'forbidden access' });
+                }
+
+                const id = req.params.id;
+                const filter = { _id: new ObjectId(id) };
+                const updatedTask = req.body;
+
+                const task = {
+                    $set: {
+                        title: updatedTask.title,
+                        description: updatedTask.description,
+                        deadline: updatedTask.deadline,
+                        priority: updatedTask.priority,
+                        status: 'to-do',
+                        timestamp: new Date(),
+                        email: updatedTask.email
+                    }
+                }
+
+                const result = await taskCollection.updateOne(filter, task);
+                res.send(result);
+            })
+        }
+        catch (error) {
+            console.log(error);
+        }
+
+        try {
+            app.patch('/api/v1/task/status-ongoing/:id', logger, verifyToken, async (req, res) => {
+                const id = req.params.id;
+                const filter = { _id: new ObjectId(id) };
+                const updatedDoc = {
+                    $set: {
+                        status: 'ongoing',
+                        ongoingDate: new Date()
+                    }
+                }
+                const result = await taskCollection.updateOne(filter, updatedDoc);
+                res.send(result);
+            })
+        }
+        catch (error) {
+            console.log(error);
+        }
+
+        try {
+            app.patch('/api/v1/task/status-completed/:id', logger, verifyToken, async (req, res) => {
+                const id = req.params.id;
+                const filter = { _id: new ObjectId(id) };
+                const updatedDoc = {
+                    $set: {
+                        status: 'completed',
+                        completedDate: new Date()
+                    }
+                }
+                const result = await taskCollection.updateOne(filter, updatedDoc);
+                res.send(result);
+            })
+        }
+        catch (error) {
+            console.log(error);
+        }
+
+        try {
+            app.delete('/api/v1/delete-task/:id', logger, verifyToken, async (req, res) => {
+                console.log(req.query.email);
+                // console.log('Token', req.cookies.token);
+                console.log('User of the valid token', req.decoded);
+
+                if (req.query.email !== req.decoded.email) {
+                    return res.status(403).send({ message: 'forbidden access' });
+                }
+
+                const id = req.params.id;
+                const query = { _id: new ObjectId(id) }
+                const result = await taskCollection.deleteOne(query);
+                res.send(result);
+            })
+        }
+        catch (error) {
+            console.log(error);
+        }
+
         // Send a ping to confirm a successful connection
-        await client.db("admin").command({ ping: 1 });
-        console.log("Pinged your deployment. You successfully connected to MongoDB!");
+        // await client.db("admin").command({ ping: 1 });
+        // console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
         // Ensures that the client will close when you finish/error
         // await client.close();
